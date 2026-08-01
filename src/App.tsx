@@ -57,9 +57,17 @@ export default function App() {
         path === '/manage' ||
         path === '/dashboard-admin' ||
         path === '/admin/login' ||
-        path === '/admin/dashboard'
+        path === '/admin/dashboard' ||
+        path === '/dashboard'
       ) {
-        setActiveView('admin');
+        // If user navigated directly to `/dashboard` but is not authenticated,
+        // redirect them to the admin login page so they don't see a 404.
+        if (path === '/dashboard' && !store.getAdminUser()) {
+          window.history.replaceState({}, '', '/admin');
+          setActiveView('admin');
+        } else {
+          setActiveView('admin');
+        }
       } else {
         setActiveView('home');
       }
@@ -146,13 +154,15 @@ export default function App() {
     if (!adminUser) {
       return (
         <AdminLogin
-          onLogin={async (email, pass) => {
-            const success = await store.loginAdmin(email, pass);
-            if (success) {
-              window.history.pushState({}, '', '/admin');
-            }
-            return success;
-          }}
+            onLogin={async (email, pass) => {
+              const success = await store.loginAdmin(email, pass);
+              if (success) {
+                // After successful login, go to the protected dashboard route
+                // per project requirements.
+                window.history.pushState({}, '', '/dashboard');
+              }
+              return success;
+            }}
           onClose={navigateToHome}
         />
       );
