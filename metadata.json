@@ -1,0 +1,6 @@
+{
+  "name": "Toolly",
+  "description": "Every Tool in One Place. The premium marketplace for independent Micro SaaS products.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
