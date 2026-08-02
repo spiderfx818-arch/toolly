@@ -102,7 +102,6 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                   key={tool.id}
                   onClick={() => {
                     onOpenDetails(tool);
-                    onClose();
                   }}
                   className="p-3 rounded-[16px] bg-[#111111] hover:bg-[#181818] border border-[#262626] hover:border-white/20 transition-all flex items-center justify-between cursor-pointer group"
                 >
