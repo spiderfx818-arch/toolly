@@ -28,8 +28,8 @@ export const AppLoader: React.FC = () => {
       return;
     }
 
-    const loader = matched[1];
-    loader()
+    const loader = matched[1] as unknown as (() => Promise<AppModule>);
+    (loader as any)()
       .then((module: AppModule) => {
         if (!module || !module.default) {
           setError(`Application "${slug}" does not export a default component.`);

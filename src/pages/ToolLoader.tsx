@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { NotFoundPage } from './NotFoundPage';
+import TOOL_REGISTRY from '../lib/toolRegistry';
 
 const toolModules = import.meta.glob('../tools/*/index.tsx');
 
@@ -16,6 +17,12 @@ export const ToolLoader: React.FC = () => {
       setError('Tool slug is missing from the URL.');
       return;
     }
+    const registryEntry = TOOL_REGISTRY.find((t) => t.slug === slug || t.id === slug);
+    if (!registryEntry) {
+      setError(`Tool "${slug}" is not registered.`);
+      setComponent(null);
+      return;
+    }
 
     const normalizedSlug = slug.toLowerCase();
     const matched = Object.entries(toolModules).find(([path]) =>
@@ -28,8 +35,8 @@ export const ToolLoader: React.FC = () => {
       return;
     }
 
-    const loader = matched[1];
-    loader()
+    const loader = matched[1] as unknown as (() => Promise<ToolModule>);
+    (loader as any)()
       .then((module: ToolModule) => {
         if (!module || !module.default) {
           setError(`Tool "${slug}" does not export a default component.`);
