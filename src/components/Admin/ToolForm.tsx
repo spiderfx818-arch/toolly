@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import TOOL_REGISTRY from '../../lib/toolRegistry';
 import { X, Upload, Sparkles, Check, AlertCircle, Globe, Download, Link, Image as ImageIcon } from 'lucide-react';
 import { Category, Tool } from '../../types';
 
@@ -51,6 +52,21 @@ export const ToolForm: React.FC<ToolFormProps> = ({
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [internalToolSlug, setInternalToolSlug] = useState('');
+
+  useEffect(()=>{
+    if (internalToolSlug) {
+      const reg = TOOL_REGISTRY.find(t=>t.slug===internalToolSlug || t.id===internalToolSlug);
+      if (reg) {
+        setName(reg.name);
+        setSlug(reg.slug);
+        setDescription(reg.description);
+        setWebsiteUrl(`/tools/${reg.slug}`);
+        if (!icon) setIcon('');
+      }
+    }
+  },[internalToolSlug]);
 
   // Auto-generate slug when name changes if slug isn't custom edited
   const handleNameChange = (val: string) => {
@@ -166,6 +182,16 @@ export const ToolForm: React.FC<ToolFormProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
           
           {/* Row 1: Name & Slug */}
+          {/* Internal Tool Selector */}
+          <div>
+            <label className="block text-xs font-semibold text-white mb-1.5">Internal Coded Tool (optional)</label>
+            <select value={internalToolSlug} onChange={(e)=>setInternalToolSlug(e.target.value)} className="w-full bg-[#111111] border border-[#262626] text-white text-sm rounded-xl px-4 py-2.5">
+              <option value="">-- Select internal tool --</option>
+              {TOOL_REGISTRY.map(t=> (
+                <option key={t.id} value={t.slug}>{t.name} — /tools/{t.slug}</option>
+              ))}
+            </select>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-white mb-1.5">

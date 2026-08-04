@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ExternalLink, Download, ArrowUpRight } from 'lucide-react';
 import { Category, Tool } from '../types';
 
@@ -9,9 +10,14 @@ interface ToolCardProps {
 }
 
 export const ToolCard: React.FC<ToolCardProps> = ({ tool, category, onOpenDetails }) => {
+  const navigate = useNavigate();
   const handleOpenWebsite = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (tool.website_url) {
+    if (!tool.website_url) return;
+    if (tool.website_url.startsWith('/')) {
+      // internal route
+      navigate(tool.website_url);
+    } else {
       window.open(tool.website_url, '_blank', 'noopener,noreferrer');
     }
   };

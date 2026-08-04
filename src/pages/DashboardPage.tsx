@@ -37,7 +37,15 @@ export const DashboardPage: React.FC = () => {
         onLogout={() => {
           store.logoutAdmin();
         }}
-        onAddTool={(data) => store.addTool(data)}
+        onAddTool={async (data) => {
+          // Prevent duplicate entries with same slug: update existing instead
+          const slug = (data.slug || data.name || '').toString();
+          const existing = store.getToolBySlug(slug);
+          if (existing) {
+            return await store.updateTool(existing.id, data);
+          }
+          return await store.addTool(data);
+        }}
         onUpdateTool={(id, data) => store.updateTool(id, data)}
         onDeleteTool={(id) => store.deleteTool(id)}
         onAddCategory={(name, icon, desc) => store.addCategory(name, icon, desc)}
