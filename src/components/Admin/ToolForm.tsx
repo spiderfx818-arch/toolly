@@ -19,6 +19,22 @@ const PRESET_ICONS = [
   'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=150&auto=format&fit=crop&q=80',
 ];
 
+const findInternalRegistryForTool = (tool?: Tool | null) => {
+  if (!tool) return undefined;
+  const normalizedWebsiteSlug = tool.website_url?.startsWith('/tools/')
+    ? tool.website_url.replace(/^\/tools\//, '').replace(/\/+$/, '')
+    : '';
+
+  return TOOL_REGISTRY.find(
+    (t) =>
+      t.slug === tool.slug ||
+      t.id === tool.slug ||
+      t.slug === normalizedWebsiteSlug ||
+      t.id === normalizedWebsiteSlug ||
+      (normalizedWebsiteSlug && t.name.toLowerCase() === tool.name.toLowerCase())
+  );
+};
+
 export const ToolForm: React.FC<ToolFormProps> = ({
   initialTool,
   categories,
@@ -55,31 +71,43 @@ export const ToolForm: React.FC<ToolFormProps> = ({
 
   const [internalToolSlug, setInternalToolSlug] = useState('');
 
-  useEffect(()=>{
+  useEffect(() => {
+    const existingReg = findInternalRegistryForTool(initialTool);
+    if (existingReg) {
+      setInternalToolSlug(existingReg.slug);
+      setName(existingReg.name);
+      setSlug(existingReg.slug);
+      setDescription(existingReg.description);
+      setWebsiteUrl(`/tools/${existingReg.slug}`);
+    }
+  }, [initialTool]);
+
+  useEffect(() => {
     if (internalToolSlug) {
-      const reg = TOOL_REGISTRY.find(t=>t.slug===internalToolSlug || t.id===internalToolSlug);
+      const reg = TOOL_REGISTRY.find((t) => t.slug === internalToolSlug || t.id === internalToolSlug);
       if (reg) {
         setName(reg.name);
         setSlug(reg.slug);
         setDescription(reg.description);
         setWebsiteUrl(`/tools/${reg.slug}`);
-        if (!icon) setIcon('');
       }
     }
-  },[internalToolSlug]);
+  }, [internalToolSlug]);
+
+  const isInternalTool = Boolean(internalToolSlug);
 
   // Auto-generate slug when name changes if slug isn't custom edited
   const handleNameChange = (val: string) => {
     setName(val);
-    if (!initialTool) {
+    if (!initialTool && !isInternalTool) {
       const generated = val
         .toLowerCase()
         .trim()
         .replace(/[^\w\s-]/g, '')
         .replace(/[\s_-]+/g, '-');
       setSlug(generated);
-      if (!seoTitle) setSeoTitle(val);
     }
+    if (!seoTitle) setSeoTitle(val);
   };
 
   const handleIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -203,7 +231,8 @@ export const ToolForm: React.FC<ToolFormProps> = ({
                 value={name}
                 onChange={(e) => handleNameChange(e.target.value)}
                 placeholder="e.g. DocuMind AI"
-                className="w-full bg-[#111111] border border-[#262626] text-white text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-white/40"
+                disabled={isInternalTool}
+                className="w-full bg-[#111111] border border-[#262626] text-white text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-white/40 disabled:cursor-not-allowed disabled:opacity-70"
               />
             </div>
 
@@ -216,7 +245,8 @@ export const ToolForm: React.FC<ToolFormProps> = ({
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
                 placeholder="documind-ai"
-                className="w-full bg-[#111111] border border-[#262626] text-white text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-white/40"
+                disabled={isInternalTool}
+                className="w-full bg-[#111111] border border-[#262626] text-white text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-white/40 disabled:cursor-not-allowed disabled:opacity-70"
               />
             </div>
           </div>
@@ -273,7 +303,8 @@ export const ToolForm: React.FC<ToolFormProps> = ({
                   value={websiteUrl}
                   onChange={(e) => setWebsiteUrl(e.target.value)}
                   placeholder="https://example.com"
-                  className="w-full bg-[#111111] border border-[#262626] text-white text-sm rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-white/40"
+                  disabled={isInternalTool}
+                  className="w-full bg-[#111111] border border-[#262626] text-white text-sm rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-white/40 disabled:cursor-not-allowed disabled:opacity-70"
                 />
               </div>
             </div>

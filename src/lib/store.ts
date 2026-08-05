@@ -1,4 +1,5 @@
-import { Category, Settings, Tool, AdminUser, AdminStats } from '../types';
+﻿import { Category, Settings, Tool, AdminUser, AdminStats } from '../types';
+import TOOL_REGISTRY from './toolRegistry';
 import { INITIAL_CATEGORIES, INITIAL_SETTINGS } from './initialData';
 
 const LOCAL_STORAGE_KEY_TOOLS = 'toolly_v1_tools';
@@ -40,10 +41,10 @@ class ToollyStore {
       ]);
 
       if (Array.isArray(toolsRes)) {
-        this.tools = toolsRes;
+        this.tools = toolsRes.map((tool) => ({ ...this.normalizeInternalToolData(tool) })) as Tool[];
       } else {
         const localTools = localStorage.getItem(LOCAL_STORAGE_KEY_TOOLS);
-        this.tools = localTools ? JSON.parse(localTools) : [];
+        this.tools = localTools ? JSON.parse(localTools).map((tool: Tool) => ({ ...this.normalizeInternalToolData(tool) })) : [];
       }
 
       if (Array.isArray(catRes)) {
@@ -92,6 +93,34 @@ class ToollyStore {
     this.listeners.add(listener);
     return () => {
       this.listeners.delete(listener);
+    };
+  }
+
+  private normalizeInternalToolData(tool: Partial<Tool>): Partial<Tool> {
+    const slugCandidate = tool.slug?.toString().trim() || '';
+    const websiteSlug = typeof tool.website_url === 'string' && tool.website_url.startsWith('/tools/')
+      ? tool.website_url.replace(/^\/tools\//, '').replace(/\/+$/, '')
+      : '';
+    const nameCandidate = tool.name?.toString().trim().toLowerCase() || '';
+
+    const registryEntry = TOOL_REGISTRY.find(
+      (t) =>
+        t.slug === slugCandidate ||
+        t.id === slugCandidate ||
+        t.slug === websiteSlug ||
+        t.id === websiteSlug ||
+        t.name.toLowerCase() === nameCandidate
+    );
+
+    if (!registryEntry) {
+      return tool;
+    }
+
+    return {
+      ...tool,
+      slug: registryEntry.slug,
+      name: registryEntry.name,
+      website_url: `/tools/${registryEntry.slug}`,
     };
   }
 
@@ -196,27 +225,27 @@ class ToollyStore {
     }
 
     // Local fallback
-    const slugify = (str: string) => str.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-');
-    const slug = toolData.slug ? slugify(toolData.slug) : slugify(toolData.name || 'tool');
-
+    const normalizedToolData = this.normalizeInternalToolData(toolData);
+    const slugify = (str: string) => str.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-");
+    const slug = normalizedToolData.slug || slugify(normalizedToolData.name || "");
     newTool = {
       id: `tool-${Date.now()}`,
-      name: toolData.name || 'Untitled Tool',
+      name: normalizedToolData.name || 'Untitled Tool',
       slug,
-      description: toolData.description || '',
-      full_description: toolData.full_description || toolData.description || '',
-      icon: toolData.icon || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80',
-      thumbnail: toolData.thumbnail || '',
-      website_url: toolData.website_url || '#',
-      apk_url: toolData.apk_url || undefined,
-      category_id: toolData.category_id || (this.categories[0]?.id || 'cat-1'),
-      featured: Boolean(toolData.featured),
-      popular: Boolean(toolData.popular),
-      new: toolData.new !== undefined ? Boolean(toolData.new) : true,
-      status: toolData.status || 'published',
-      seo_title: toolData.seo_title || toolData.name,
-      seo_description: toolData.seo_description || toolData.description,
-      keywords: toolData.keywords || '',
+      description: normalizedToolData.description || '',
+      full_description: normalizedToolData.full_description || normalizedToolData.description || '',
+      icon: normalizedToolData.icon || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80',
+      thumbnail: normalizedToolData.thumbnail || '',
+      website_url: normalizedToolData.website_url || '#',
+      apk_url: normalizedToolData.apk_url || undefined,
+      category_id: normalizedToolData.category_id || (this.categories[0]?.id || 'cat-1'),
+      featured: Boolean(normalizedToolData.featured),
+      popular: Boolean(normalizedToolData.popular),
+      new: normalizedToolData.new !== undefined ? Boolean(normalizedToolData.new) : true,
+      status: normalizedToolData.status || 'published',
+      seo_title: normalizedToolData.seo_title || normalizedToolData.name,
+      seo_description: normalizedToolData.seo_description || normalizedToolData.description,
+      keywords: normalizedToolData.keywords || '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -248,9 +277,10 @@ class ToollyStore {
       console.warn('API update tool error, updating locally:', e);
     }
 
+    const normalizedToolData = this.normalizeInternalToolData(toolData);
     const updated: Tool = {
       ...this.tools[idx],
-      ...toolData,
+      ...normalizedToolData,
       id,
       updated_at: new Date().toISOString(),
     };

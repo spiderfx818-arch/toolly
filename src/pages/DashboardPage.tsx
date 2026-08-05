@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { store } from '../lib/store';
+import TOOL_REGISTRY from '../lib/toolRegistry';
 import { AdminDashboard } from '../components/Admin/AdminDashboard';
 import { AdminUser, Category, Settings, Tool } from '../types';
 
@@ -38,12 +39,44 @@ export const DashboardPage: React.FC = () => {
           store.logoutAdmin();
         }}
         onAddTool={async (data) => {
-          // Prevent duplicate entries with same slug: update existing instead
           const slug = (data.slug || data.name || '').toString();
           const existing = store.getToolBySlug(slug);
           if (existing) {
             return await store.updateTool(existing.id, data);
           }
+
+          const normalizedName = (data.name || '').toString().trim().toLowerCase();
+          const websiteUrl = (data.website_url || '').toString().trim();
+          const registryEntry = TOOL_REGISTRY.find(
+            (t) =>
+              t.slug === slug ||
+              t.id === slug ||
+              t.name.toLowerCase() === normalizedName ||
+              websiteUrl === `/tools/${t.slug}` ||
+              websiteUrl === `/tools/${t.id}`
+          );
+
+          if (registryEntry) {
+            const existingInternal = tools.find(
+              (tool) =>
+                tool.website_url.startsWith('/tools/') &&
+                (tool.slug === registryEntry.slug ||
+                  tool.slug === registryEntry.id ||
+                  tool.name.toLowerCase() === registryEntry.name.toLowerCase() ||
+                  tool.website_url === `/tools/${registryEntry.slug}` ||
+                  tool.website_url === `/tools/${registryEntry.id}`)
+            );
+
+            if (existingInternal) {
+              return await store.updateTool(existingInternal.id, {
+                ...data,
+                slug: registryEntry.slug,
+                website_url: `/tools/${registryEntry.slug}`,
+                name: registryEntry.name,
+              });
+            }
+          }
+
           return await store.addTool(data);
         }}
         onUpdateTool={(id, data) => store.updateTool(id, data)}

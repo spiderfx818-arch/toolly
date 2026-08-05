@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { NotFoundPage } from './NotFoundPage';
 import TOOL_REGISTRY from '../lib/toolRegistry';
 
@@ -8,19 +8,35 @@ const toolModules = import.meta.glob('../tools/*/index.tsx');
 type ToolModule = { default: React.ComponentType<any> };
 
 export const ToolLoader: React.FC = () => {
+  const navigate = useNavigate();
   const { slug } = useParams<{ slug?: string }>();
   const [Component, setComponent] = useState<React.ComponentType<any> | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const resolveRegistryEntry = (candidateSlug: string) => {
+    const directMatch = TOOL_REGISTRY.find((t) => t.slug === candidateSlug || t.id === candidateSlug);
+    if (directMatch) {
+      return directMatch;
+    }
+
+    const normalizedName = candidateSlug.replace(/[-_]+/g, ' ').trim().toLowerCase();
+    return TOOL_REGISTRY.find((t) => t.name.toLowerCase() === normalizedName);
+  };
 
   useEffect(() => {
     if (!slug) {
       setError('Tool slug is missing from the URL.');
       return;
     }
-    const registryEntry = TOOL_REGISTRY.find((t) => t.slug === slug || t.id === slug);
+    const registryEntry = resolveRegistryEntry(slug);
     if (!registryEntry) {
       setError(`Tool "${slug}" is not registered.`);
       setComponent(null);
+      return;
+    }
+
+    if (registryEntry.slug !== slug) {
+      navigate(`/tools/${registryEntry.slug}`, { replace: true });
       return;
     }
 
