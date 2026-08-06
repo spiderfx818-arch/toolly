@@ -22,6 +22,7 @@ export const TOOL_REGISTRY: ToolEntry[] = [
   { id: 'text-case-converter', name: 'Text Case Converter', slug: 'text-case-converter', description: 'Convert text to uppercase, lowercase, title case and more.', category: 'Utilities', icon: 'Text', type: 'internal', status: 'published' },
   { id: 'json-formatter', name: 'JSON Formatter', slug: 'json-formatter', description: 'Format, minify and validate JSON locally.', category: 'Developers', icon: 'Code', type: 'internal', status: 'published' },
   { id: 'image-compressor', name: 'Image Compressor', slug: 'image-compressor', description: 'Compress images locally without uploading to a server.', category: 'Utilities', icon: 'Image', type: 'internal', status: 'published' },
+  { id: 'resume-builder', name: 'Resume Builder', slug: 'resume-builder', description: 'Build a professional resume with live preview and export to PDF.', category: 'Productivity', icon: 'FileText', type: 'internal', status: 'published' },
 ];
 
 export default TOOL_REGISTRY;
